@@ -1,0 +1,8 @@
+# Extra tools for the prediction API and the Locust flood test.
+# Not needed to run the Streamlit app, so kept out of requirements.txt.
+-r requirements.txt
+fastapi>=0.115
+uvicorn[standard]>=0.32
+python-multipart>=0.0.12
+requests>=2.32
+locust>=2.30

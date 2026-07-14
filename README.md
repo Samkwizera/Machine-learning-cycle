@@ -91,9 +91,11 @@ python src/train.py --epochs 15 # optional, a trained model is already in models
 streamlit run app/streamlit_app.py   # http://localhost:8501
 ```
 
-Prediction API:
+Prediction API and flood test need a couple of extra tools:
 
 ```bash
+pip install -r requirements-dev.txt   # fastapi, uvicorn, locust
+
 uvicorn app.api:app --host 0.0.0.0 --port 8000
 curl -F "file=@data/test/roses/<some>.jpg" http://localhost:8000/predict
 ```
