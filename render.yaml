@@ -1,0 +1,10 @@
+# Render blueprint — deploys the Streamlit UI as a Docker web service.
+# Render injects $PORT at runtime; the Dockerfile CMD binds to it.
+services:
+  - type: web
+    name: flower-classifier
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /

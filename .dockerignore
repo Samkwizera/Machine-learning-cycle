@@ -1,0 +1,17 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.ipynb_checkpoints/
+notebook/
+data/train/
+data/val/
+data/test/
+data/uploads/
+data/app.db
+*_log.txt
+results/
+.pytest_cache/
+*.md

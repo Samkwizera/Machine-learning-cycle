@@ -1,0 +1,31 @@
+# Load-test topology: an nginx load balancer in front of N replicas of the
+# FastAPI prediction service. Vary N to measure latency vs container count.
+#
+#   docker compose up --build --scale api=1     # then run Locust
+#   docker compose up --build --scale api=2
+#   docker compose up --build --scale api=3
+#
+# Locust targets http://localhost:8000  (nginx round-robins to the replicas).
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    expose:
+      - "8000"
+    environment:
+      - PORT=8000
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api

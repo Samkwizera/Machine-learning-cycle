@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Data (regenerate with: python src/data_acquisition.py)
+data/train/
+data/val/
+data/test/
+data/uploads/
+data/app.db
+
+# Logs / temp
+*_log.txt
+install_log.txt
+results/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep the trained model and viz cache tracked:
+!models/
+!models/*.pth
