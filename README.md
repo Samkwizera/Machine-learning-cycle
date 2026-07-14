@@ -1,3 +1,14 @@
+---
+title: Flower Classifier
+emoji: 🌸
+colorFrom: pink
+colorTo: green
+sdk: streamlit
+python_version: "3.12"
+app_file: app/streamlit_app.py
+pinned: false
+---
+
 # Flower species classifier
 
 An end-to-end image classification pipeline. A fine-tuned MobileNetV2 classifies a
@@ -115,11 +126,24 @@ docker build -f Dockerfile.api -t flower-api .
 docker run -p 8000:8000 flower-api
 ```
 
-## Deployment (Render)
+## Deployment (Hugging Face Spaces)
 
-The UI deploys to Render as a Docker web service via [render.yaml](render.yaml):
-push the repo, create a Blueprint on Render pointing at it, and Render builds the
-Dockerfile and serves the app. Live URL above.
+The app is deployed as a Streamlit Space. The front matter at the top of this
+README is the Space config (it tells the Space to run `app/streamlit_app.py`).
+
+To deploy:
+
+1. Create a new Space at https://huggingface.co/new-space, SDK = Streamlit.
+2. Add the Space as a git remote and push this repo to it:
+   ```bash
+   git remote add space https://huggingface.co/spaces/<user>/<space-name>
+   git push space main
+   ```
+3. The Space installs `requirements.txt` and runs the app. Live URL above.
+
+A Render Docker deployment is also set up in [render.yaml](render.yaml) and
+[Dockerfile](Dockerfile) as an alternative, though Render's free tier is tight on
+memory for PyTorch.
 
 ## Flood test (Locust)
 
