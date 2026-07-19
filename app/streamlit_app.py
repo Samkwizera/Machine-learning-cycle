@@ -220,6 +220,14 @@ elif page == "Retrain":
 
     if not model_available():
         st.error("No base model found. Train it first with `python src/train.py`.")
+    elif not _has_raw_data():
+        st.info("This hosted deployment ships only the trained model and cached "
+                "visualizations, not the ~220 MB training set, and the free tier has "
+                "too little memory to fine-tune. Retraining therefore runs locally: "
+                "clone the repo, run `python src/data_acquisition.py`, then this button "
+                "fine-tunes the model on the original data plus your uploads. The "
+                "retraining code lives in `src/model.py`.")
+        st.button("Trigger retraining", type="primary", disabled=True)
     elif st.button("Trigger retraining", type="primary"):
         from preprocessing import get_combined_loader, get_dataloader
         import model as model_mod
