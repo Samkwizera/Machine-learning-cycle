@@ -10,7 +10,7 @@ Data type: images (non-tabular). Classes: daisy, dandelion, roses, sunflowers, t
 | | |
 |---|---|
 | Video demo (YouTube) | TODO |
-| Live app (Render) | TODO |
+| Live app (Streamlit) | https://machine-learning-cycle-3rjwyz84gzajk68kw9bnh2.streamlit.app/ |
 | Notebook | [notebook/flowers_classification.ipynb](notebook/flowers_classification.ipynb) |
 
 ## What it does
@@ -122,7 +122,9 @@ docker run -p 8000:8000 flower-api
 The app is deployed on Streamlit Community Cloud from this GitHub repo:
 
 1. Go to https://share.streamlit.io and sign in with GitHub.
-2. New app, pick this repo, branch `main`, main file `app/streamlit_app.py`.
+2. New app, pick this repo, branch `main`, main file `app/streamlit_app.py`. Under
+   Advanced settings, set the Python version to **3.12** (PyTorch ships stable CPU
+   wheels for it; the app itself runs on 3.12-3.14).
 3. Deploy. It installs `requirements.txt` and runs the app. Live URL above.
 
 The model and `viz_cache.json` are committed, so prediction and the visualizations
@@ -139,23 +141,26 @@ setup, nginx in front of N replicas, is in [docker-compose.yml](docker-compose.y
 and [nginx.conf](nginx.conf). Commands are in
 [locust/run_load_tests.md](locust/run_load_tests.md).
 
-Results (100 users, 45s, 4-core machine, one thread per worker):
+Results (100 users, 60s ramp-to-flood, 4 logical / 2 physical core machine, one
+thread per worker, aggregated over `/predict` and `/health`):
 
 | Workers | Requests | RPS | Median latency (ms) | 95%ile (ms) | Failures |
 |---|---|---|---|---|---|
-| 1 | 520 | 11.9 | 4200 | 16000 | 0 |
-| 2 | 831 | 18.8 | 3800 | 12000 | 0 |
-| 4 | 1141 | 25.7 | 2200 | 8100 | 0 |
+| 1 | 587 | 10.2 | 4900 | 23000 | 0 |
+| 2 | 1030 | 17.6 | 4000 | 11000 | 0 |
+| 4 | 1310 | 22.0 | 3500 | 9600 | 0 |
 
-Throughput roughly doubles (12 to 26 req/s) and median latency nearly halves (4.2s
-to 2.2s) as workers scale from 1 to 4, which is the number of cores on the machine,
-with no failures at any level.
+Throughput rises from 10 to 22 req/s and the 95th-percentile latency drops from 23s
+to 9.6s as workers scale from 1 to 4, with no failures at any level. Scaling past
+the two physical cores still helps here because extra workers overlap image decode,
+request I/O and inference, and hyperthreading keeps the cores busy.
 
 One thing worth noting: each worker is pinned to a single thread
-(`OMP_NUM_THREADS=1`) for this test. Without pinning, PyTorch already spreads a
-single inference across all cores, so running extra workers just makes them contend
-for the same cores and latency gets worse instead of better. Pinning each worker to
-one thread is what lets them actually spread across cores and scale.
+(`OMP_NUM_THREADS=1`) for this test. Without pinning, PyTorch spreads a single
+inference across all cores by default, so running two unpinned workers just made
+them contend for the same cores and throughput actually dropped below the
+single-worker case (an early unpinned run gave 2 workers ~6 req/s versus ~11 for 1).
+Pinning each worker to one thread is what lets them spread across cores and scale.
 
 ## Retraining flow
 
