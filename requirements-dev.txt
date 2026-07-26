@@ -6,3 +6,7 @@ uvicorn[standard]>=0.32
 python-multipart>=0.0.12
 requests>=2.32
 locust>=2.30
+
+# Executing the notebook non-interactively (nbconvert --execute).
+nbconvert>=7.16
+ipykernel>=6.29

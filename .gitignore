@@ -19,6 +19,10 @@ data/app.db
 install_log.txt
 results/
 
+# Local tooling / scratch
+.claude/
+*.pth.bak
+
 # OS
 .DS_Store
 Thumbs.db
