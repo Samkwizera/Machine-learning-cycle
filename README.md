@@ -109,12 +109,25 @@ prediction, and retraining from the saved model.
 
 ## Docker
 
+Both images are built and verified: the UI answers `/_stcore/health` on 8501, and the
+API returns a real prediction on 8000.
+
 ```bash
 docker build -t flower-ui .
 docker run -p 8501:8501 flower-ui
 
 docker build -f Dockerfile.api -t flower-api .
 docker run -p 8000:8000 flower-api
+curl -F "file=@data/test/daisy/<some>.jpg" http://localhost:8000/predict
+```
+
+The load-balanced topology used for the flood test (nginx in front of N API
+replicas):
+
+```bash
+docker compose up -d --scale api=2
+curl http://localhost:8000/health
+docker compose down
 ```
 
 ## Deployment (Streamlit Community Cloud)
@@ -134,15 +147,37 @@ container-based hosting.
 
 ## Flood test (Locust)
 
-The FastAPI `/predict` endpoint was flooded with Locust while running with a
-varying number of uvicorn worker processes (each worker is a separate process,
-which mirrors scaling container replicas). The Docker-container version of the same
-setup, nginx in front of N replicas, is in [docker-compose.yml](docker-compose.yml)
-and [nginx.conf](nginx.conf). Commands are in
-[locust/run_load_tests.md](locust/run_load_tests.md).
+The FastAPI `/predict` endpoint was flooded with Locust against a varying number of
+**Docker container replicas** behind an nginx load balancer
+([docker-compose.yml](docker-compose.yml), [nginx.conf](nginx.conf)). Commands are
+in [locust/run_load_tests.md](locust/run_load_tests.md).
 
-Results (100 users, 60s ramp-to-flood, 4 logical / 2 physical core machine, one
-thread per worker, aggregated over `/predict` and `/health`):
+Results (100 users, 60s ramp-to-flood, 4 logical / 2 physical core machine, each
+replica capped at 1.0 CPU and one thread, aggregated over `/predict` and `/health`):
+
+| Replicas | Requests | RPS | Median latency (ms) | 95%ile (ms) | Failures |
+|---|---|---|---|---|---|
+| 1 | 942 | 16.1 | 5600 | 6500 | 0 |
+| 2 | 1224 | 20.5 | 4300 | 5500 | 0 |
+| 4 | 731 | 12.2 | 6500 | 15000 | 0 |
+
+Throughput rises from 16 to 20.5 req/s going from one replica to two, and the median
+latency drops from 5.6s to 4.3s, with no failures. Going to four replicas makes
+things **worse**, not better: throughput falls to 12.2 req/s and the 95th percentile
+blows out from 5.5s to 15s. Four replicas each capped at 1.0 CPU want four cores,
+and they are competing with nginx, the Docker VM and Locust itself for the same four
+logical (two physical) cores, so the box is oversubscribed and time is lost to
+context switching rather than spent on inference. On this hardware the sweet spot is
+two replicas; scaling past the physical core count needs a bigger host, not more
+containers.
+
+nginx spread the load evenly at both levels (510/511 requests across two replicas,
+155/166/164/158 across four), so the drop-off is CPU contention, not a balancing
+artifact.
+
+For reference, an earlier run of the same flood against N **uvicorn worker
+processes** in a single container (no CPU caps, workers free to share all cores)
+scaled differently — 10.2 → 17.6 → 22.0 req/s at 1, 2 and 4 workers:
 
 | Workers | Requests | RPS | Median latency (ms) | 95%ile (ms) | Failures |
 |---|---|---|---|---|---|
@@ -150,17 +185,17 @@ thread per worker, aggregated over `/predict` and `/health`):
 | 2 | 1030 | 17.6 | 4000 | 11000 | 0 |
 | 4 | 1310 | 22.0 | 3500 | 9600 | 0 |
 
-Throughput rises from 10 to 22 req/s and the 95th-percentile latency drops from 23s
-to 9.6s as workers scale from 1 to 4, with no failures at any level. Scaling past
-the two physical cores still helps here because extra workers overlap image decode,
-request I/O and inference, and hyperthreading keeps the cores busy.
+Workers keep improving at 4 where containers regress because the OS is free to
+schedule them across whatever cores are idle, while the container replicas are each
+held to a hard 1.0 CPU limit and cannot borrow slack from one another.
 
-One thing worth noting: each worker is pinned to a single thread
-(`OMP_NUM_THREADS=1`) for this test. Without pinning, PyTorch spreads a single
-inference across all cores by default, so running two unpinned workers just made
-them contend for the same cores and throughput actually dropped below the
-single-worker case (an early unpinned run gave 2 workers ~6 req/s versus ~11 for 1).
-Pinning each worker to one thread is what lets them spread across cores and scale.
+One thing worth noting: every worker and every replica is pinned to a single thread
+(`OMP_NUM_THREADS=1`, set in [docker-compose.yml](docker-compose.yml) for the
+containers). Without pinning, PyTorch spreads a single inference across all cores by
+default, so running two unpinned workers just made them contend for the same cores
+and throughput actually dropped below the single-worker case (an early unpinned run
+gave 2 workers ~6 req/s versus ~11 for 1). Pinning each unit to one thread is what
+lets them spread across cores and scale.
 
 ## Retraining flow
 

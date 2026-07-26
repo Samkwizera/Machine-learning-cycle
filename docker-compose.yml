@@ -15,6 +15,10 @@ services:
       - "8000"
     environment:
       - PORT=8000
+      # One thread per replica, otherwise each replica's PyTorch spreads a single
+      # inference across every core and the replicas just contend for them.
+      - OMP_NUM_THREADS=1
+      - MKL_NUM_THREADS=1
     deploy:
       resources:
         limits:
