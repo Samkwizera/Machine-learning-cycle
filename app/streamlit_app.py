@@ -136,7 +136,7 @@ if page == "Status":
     st.subheader("Recent retraining events")
     events = db.recent_retrains()
     if events:
-        st.dataframe(pd.DataFrame(events), use_container_width=True)
+        st.dataframe(pd.DataFrame(events), width='stretch')
     else:
         st.caption("No retraining runs yet.")
 
@@ -150,7 +150,7 @@ elif page == "Predict":
         if file is not None:
             image = Image.open(file).convert("RGB")
             left, right = st.columns(2)
-            left.image(image, caption="Uploaded image", use_container_width=True)
+            left.image(image, caption="Uploaded image", width="stretch")
             with st.spinner("Classifying"):
                 result = prediction.predict(image, model_path=MODEL_PATH)
             right.success(f"Prediction: {result['label']}")
@@ -206,7 +206,7 @@ elif page == "Upload Data":
     counts = db.upload_counts()
     if counts:
         st.dataframe(pd.DataFrame([{"class": c, "count": counts.get(c, 0)}
-                                   for c in CLASS_NAMES]), use_container_width=True)
+                                   for c in CLASS_NAMES]), width='stretch')
     else:
         st.caption("No uploads yet.")
 
@@ -219,6 +219,9 @@ elif page == "Retrain":
     total = db.total_uploads()
     st.metric("Uploaded images available", total)
     epochs = st.slider("Fine-tuning epochs", 1, 10, 3)
+    # the backward pass holds activations for the whole batch, so this is the
+    # knob to turn when torch runs out of memory on a small machine
+    batch_size = st.select_slider("Batch size", [8, 16, 32], value=16)
 
     if not model_available():
         st.error("No base model found. Train it first with `python src/train.py`.")
@@ -241,8 +244,8 @@ elif page == "Retrain":
             with st.status("Retraining", expanded=True) as status:
                 st.write("Building loaders (train + uploads)")
                 train_loader = get_combined_loader([TRAIN_DIR, UPLOADS_DIR],
-                                                   batch_size=32, train=True)
-                val_loader = get_dataloader(VAL_DIR, batch_size=32, train=False)
+                                                   batch_size=batch_size, train=True)
+                val_loader = get_dataloader(VAL_DIR, batch_size=batch_size, train=False)
                 st.write(f"{len(train_loader.dataset)} training images after adding "
                          f"the uploads")
 
@@ -252,7 +255,8 @@ elif page == "Retrain":
                                                  verbose=False)
 
                 st.write("Evaluating on the test set")
-                test_loader = get_dataloader(TEST_DIR, batch_size=32, train=False)
+                test_loader = get_dataloader(TEST_DIR, batch_size=batch_size,
+                                             train=False)
                 _, test_acc = model_mod.evaluate_loss(
                     net, test_loader, torch.nn.CrossEntropyLoss())
 
