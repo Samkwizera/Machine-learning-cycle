@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import database as db
 import prediction
-from preprocessing import CLASS_NAMES, ensure_class_dirs, has_images
+from preprocessing import CLASS_NAMES, ensure_class_dirs
 from prediction import LABEL_DISPLAY
 
 DATA_DIR = ROOT / "data"
@@ -51,7 +51,9 @@ def _viz_cache():
 
 
 def _has_raw_data():
-    return has_images(TRAIN_DIR)
+    # the downloaded dataset is all .jpg; uploads can be other formats but they
+    # never land here
+    return TRAIN_DIR.exists() and any(TRAIN_DIR.rglob("*.jpg"))
 
 
 @st.cache_data(show_spinner=False)
