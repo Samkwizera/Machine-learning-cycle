@@ -24,6 +24,8 @@ results/
 # Local tooling / scratch
 .claude/
 *.pth.bak
+demo_uploads/
+video_script.md
 
 # OS
 .DS_Store
