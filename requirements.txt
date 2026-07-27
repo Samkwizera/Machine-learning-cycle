@@ -1,7 +1,10 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.13.0
 torchvision==0.28.0
-streamlit>=1.40,<1.42
+streamlit>=1.50,<2
+# altair 5.x assumes Python 3.14 ships PEP 728 and crashes on import there;
+# 6.x fixed the version gate, and streamlit <1.50 caps altair below 6
+altair>=6
 scikit-learn>=1.6
 matplotlib>=3.9
 seaborn>=0.13
