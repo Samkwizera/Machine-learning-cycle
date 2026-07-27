@@ -15,6 +15,15 @@ NUM_CLASSES = len(CLASS_NAMES)
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
+# the original dataset is all .jpg, but the upload page also accepts these
+IMAGE_EXTS = {".jpg", ".jpeg", ".png"}
+
+
+def has_images(directory):
+    directory = Path(directory)
+    return directory.exists() and any(
+        p.suffix.lower() in IMAGE_EXTS for p in directory.rglob("*") if p.is_file())
+
 
 def get_transforms(train=True):
     if train:
@@ -46,7 +55,7 @@ def get_combined_loader(dirs, batch_size=32, train=True, num_workers=0):
     parts = []
     for d in dirs:
         d = Path(d)
-        if d.exists() and any(d.rglob("*.jpg")):
+        if has_images(d):
             # allow_empty keeps class_to_idx over all classes even when the
             # uploads folder only has images for some of them
             parts.append(datasets.ImageFolder(str(d), transform=tfm, allow_empty=True))

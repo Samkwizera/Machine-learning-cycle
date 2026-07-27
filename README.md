@@ -55,6 +55,11 @@ Per class, roses are hardest (0.77 recall — most often confused with tulips) a
 dandelions easiest (0.94 F1). Full classification report and confusion matrix are in
 the notebook.
 
+The checkpoint is saved as `models/flowers_model.pth`. `.pth` is PyTorch's saved-model
+format, the equivalent of `.h5` or `.tf` for Keras and `.pkl` for scikit-learn — the
+stack here is PyTorch because TensorFlow has no Python 3.14 wheels. It holds the
+`state_dict`, which `src/model.py` loads back into the MobileNetV2 architecture.
+
 ## Structure
 
 ```
@@ -72,7 +77,7 @@ Machine-learning-cycle/
 │   ├── streamlit_app.py      predict / visualize / upload / retrain / status
 │   └── api.py                FastAPI: /predict, /health
 ├── locust/locustfile.py      flood test
-├── data/                     train/ val/ test/ uploads/ (gitignored)
+├── data/                     train/ val/ test/ uploads/ (images not committed)
 ├── models/flowers_model.pth  trained checkpoint
 ├── Dockerfile                Streamlit image
 ├── Dockerfile.api            FastAPI image

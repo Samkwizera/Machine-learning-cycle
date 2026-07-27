@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import database as db
 import prediction
-from preprocessing import CLASS_NAMES, ensure_class_dirs
+from preprocessing import CLASS_NAMES, ensure_class_dirs, has_images
 from prediction import LABEL_DISPLAY
 
 DATA_DIR = ROOT / "data"
@@ -51,7 +51,7 @@ def _viz_cache():
 
 
 def _has_raw_data():
-    return TRAIN_DIR.exists() and any(TRAIN_DIR.rglob("*.jpg"))
+    return has_images(TRAIN_DIR)
 
 
 @st.cache_data(show_spinner=False)
@@ -241,6 +241,8 @@ elif page == "Retrain":
                 train_loader = get_combined_loader([TRAIN_DIR, UPLOADS_DIR],
                                                    batch_size=32, train=True)
                 val_loader = get_dataloader(VAL_DIR, batch_size=32, train=False)
+                st.write(f"{len(train_loader.dataset)} training images after adding "
+                         f"the uploads")
 
                 st.write(f"Fine-tuning for {epochs} epoch(s)")
                 net, _ = model_mod.retrain_model(MODEL_PATH, train_loader, val_loader,
