@@ -34,16 +34,26 @@ linear layer for 5 classes. Trained with transfer learning, data augmentation
 validation loss. Evaluated with accuracy, loss, precision, recall and F1, plus a
 confusion matrix.
 
-Test set results:
+Test set results (556 held-out images):
 
 | Metric | Score |
 |---|---|
-| Accuracy | 0.880 |
-| Precision (macro) | 0.883 |
-| Recall (macro) | 0.881 |
-| F1 (macro) | 0.876 |
+| Accuracy | 0.890 |
+| Precision (macro) | 0.889 |
+| Recall (macro) | 0.888 |
+| F1 (macro) | 0.887 |
+| Loss | 0.314 |
 
-Early stopping cut training at epoch 9 (best weights from epoch 5).
+Early stopping cut training at epoch 7 (best weights from epoch 4, val loss 0.289).
+
+The notebook then fine-tunes that model for 4 more epochs to demonstrate the retrain
+path, which lifts test accuracy to **0.906**. That retrained checkpoint is the one in
+`models/flowers_model.pth` and the one the app and API serve, so the numbers above
+describe the base model and 0.906 describes what ships.
+
+Per class, roses are hardest (0.77 recall — most often confused with tulips) and
+dandelions easiest (0.94 F1). Full classification report and confusion matrix are in
+the notebook.
 
 ## Structure
 
@@ -105,7 +115,13 @@ curl -F "file=@data/test/roses/<some>.jpg" http://localhost:8000/predict
 [notebook/flowers_classification.ipynb](notebook/flowers_classification.ipynb) covers
 data acquisition, three interpreted EDA features, preprocessing, the model,
 training, evaluation with five metrics and a confusion matrix, single-image
-prediction, and retraining from the saved model.
+prediction, and retraining from the saved model. It is committed with all outputs
+saved, so the plots, metrics and confusion matrix are visible without re-running it.
+
+One artefact worth explaining: epoch 7 reports 38368.5s against ~600-700s for every
+other epoch. Training ran overnight on a laptop that suspended mid-epoch — the wall
+clock kept counting while the machine slept. It affects that one timing figure and
+nothing else.
 
 ## Docker
 
