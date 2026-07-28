@@ -226,3 +226,7 @@ lets them spread across cores and scale.
    train set plus the uploads, loads the current model, fine-tunes, evaluates on
    the test set, and saves the new model.
 3. The Predict page then uses the retrained model.
+
+Retraining runs locally, since the hosted app ships the model and the cached
+visualizations but not the 220 MB training set. The Retrain page says so and
+disables the button there.
