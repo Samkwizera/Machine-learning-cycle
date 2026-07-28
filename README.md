@@ -9,7 +9,7 @@ Data type: images (non-tabular). Classes: daisy, dandelion, roses, sunflowers, t
 
 | | |
 |---|---|
-| Video demo (YouTube) | TODO |
+| Video demo (YouTube) | https://youtu.be/QxjZuCiTYcQ |
 | Live app (Streamlit) | https://machine-learning-cycle-3rjwyz84gzajk68kw9bnh2.streamlit.app/ |
 | Notebook | [notebook/flowers_classification.ipynb](notebook/flowers_classification.ipynb) |
 
